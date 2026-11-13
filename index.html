@@ -7170,12 +7170,12 @@ html body .fl-petir{flex:none;width:.58em;height:.8em;margin:0;transform:skewX(-
   html body .fl-kepala{gap:0;}
   html body .fl .fl-sub{margin-top:16px;}
 }
-/* HP (<768px, 13/11/2026): layout mengikuti referensi — latar oranye selebar layar, header rata tengah,
+/* HP (<768px, 13/11/2026): layout mengikuti referensi — kartu oranye (sudut 8px) di dalam pita putih dengan jarak 16px kiri-kanan seperti section lain, header rata tengah,
    countdown berbentuk pil, rel kartu produk geser ke samping (kartu pertama berlabel "Deal terbesar"),
    dan tombol "Lihat Semua Flash Sale" selebar penuh. */
 @media (max-width:767.98px){
-  html body .fl{display:block;min-height:0;padding:0;background:none;border-radius:0;overflow:hidden;--fl-judul:clamp(38px,12.8vw,50px);}
-  html body .fl-panel{border-radius:0;}
+  html body .fl{display:block;min-height:0;padding:16px;background:#fff;border-radius:0;overflow:visible;--fl-judul:clamp(38px,12.8vw,50px);}   /* pita putih + jarak 16px kiri-kanan seperti section lain */
+  html body .fl-panel{border-radius:8px;overflow:hidden;}   /* kartu oranye bersudut 8px */
   html body .fl-layar-besar{display:none;}
   html body .fl-layar-hp{display:inline;}
   html body .fl-band{display:flex;flex-direction:column;justify-content:flex-start;align-items:center;flex-wrap:nowrap;gap:12px;padding:24px 20px 116px;text-align:center;}
@@ -7200,6 +7200,23 @@ html body .fl-petir{flex:none;width:.58em;height:.8em;margin:0;transform:skewX(-
   html body .fl .fl-catatan{display:none;}
   html body .fl .fl-catatan.fl-selesai{display:flex;}
   html body .fl .fl-semua{width:100%;}
+}
+/* Slider Flash Sale HP (13/11/2026): lebar kartu = kartu produk di PDP & grid produk ((layar - 40px) / 2, jarak 8px).
+   Isi panel oranye memakai padding dalam 16px yang sama: judul, kartu, dan tombol "Lihat Semua".
+   Kartu berikutnya terpotong rapi oleh tepi kanan panel sebagai petunjuk bisa digeser. */
+@media (max-width:767.98px){
+  html body .fl .fl-panel{overflow:hidden;}
+  html body .fl .fl-area{padding:0 0 16px;}
+  html body .fl .fl-daftar{gap:8px;margin:0;padding:0 16px;scroll-padding-inline:16px;}
+  html body .fl .fl-daftar > .fl-kartu{flex:0 0 calc((100vw - 40px) / 2);width:calc((100vw - 40px) / 2);}
+  html body .fl .fl-daftar::after{display:none;}
+  /* Kartu terkunci di sumbu vertikal: slider hanya bisa digeser ke samping; geser naik-turun tetap menggulir halaman. */
+  html body .fl .fl-daftar{overflow-x:auto;overflow-y:hidden;overscroll-behavior:contain;touch-action:pan-x pan-y;}
+  html body .fl .fl-daftar > .fl-kartu,
+  html body .fl .fl-daftar > .fl-kartu:hover{transform:none;}
+  html body .fl .fl-kaki{padding:0 16px;}
+  html body .fl .fl-band{padding-left:16px;padding-right:16px;}
+  html body .fl .fl-judul{font-size:clamp(30px,10vw,40px);}   /* judul tetap di dalam padding 16px panel */
 }
 </style>
 <style id="artikelKartu">
@@ -9370,13 +9387,16 @@ function pasangAnimasiFlash(){
   if(!section || !section.classList || flashGerakDikurangi()) return;
   section.classList.add('fl-hidup');
   if(!window.IntersectionObserver) return;
-  var pengamat = new IntersectionObserver(function(entri){
+  function tampak(entri, obs){
     entri.filter(function(e){ return e.isIntersecting; }).forEach(function(e, i){
-      pengamat.unobserve(e.target);
+      obs.unobserve(e.target);
       e.target.style.setProperty('--fl-jeda', (i * 70)+'ms');
       e.target.classList.add('fl-tampak');
     });
-  }, { threshold:.2 });
+  }
+  var pengamat = new IntersectionObserver(tampak, { threshold:.2 });
+  // Kartu di slider HP: kartu ketiga hanya mengintip ±8px, jadi ambangnya lebih rendah agar petunjuk geser tetap terlihat.
+  var pengamatKartu = new IntersectionObserver(tampak, { threshold:.03 });
   section.querySelectorAll('.fl-kepala > *, .fl-cd, .fl-kartu, .fl-kaki').forEach(function(el){
     el.classList.add('fl-anim');
     el.addEventListener('animationend', function selesai(e){
@@ -9385,7 +9405,7 @@ function pasangAnimasiFlash(){
       el.classList.remove('fl-anim', 'fl-tampak');
       el.style.removeProperty('--fl-jeda');
     });
-    pengamat.observe(el);
+    (el.classList.contains('fl-kartu') ? pengamatKartu : pengamat).observe(el);
   });
 }
 function flashDetak(){
